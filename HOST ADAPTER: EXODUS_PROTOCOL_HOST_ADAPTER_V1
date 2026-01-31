@@ -1,0 +1,189 @@
+"""
+HOST ADAPTER: EXODUS_PROTOCOL_HOST_ADAPTER_V1
+Purpose:
+- Provide a stable interface for any Machine Intelligence / Engine
+  to integrate the TCC_PATCH_V7_3_EXODUS_PROTOCOL ExodusKernel
+  without mutating its sealed body.
+
+Pattern:
+- Host implements ExodusHostInterface.
+- Adapter coordinates lifecycle and logging around ExodusKernel.
+"""
+
+from __future__ import annotations
+from abc import ABC, abstractmethod
+from typing import Protocol, runtime_checkable, Dict, Any
+
+# --- import the sealed organ ---
+# from tcc_patch_v7_3_exodus_protocol import ExodusKernel, SimulationState
+
+
+# -----------------------------
+# Host Interface (what the Host must provide)
+# -----------------------------
+
+class ExodusHostInterface(ABC):
+    """
+    Abstract interface a Host system must implement
+    to integrate the ExodusKernel safely.
+    """
+
+    @abstractmethod
+    def identify(self) -> str:
+        """Return a stable host identifier (for logging / binding)."""
+
+    @abstractmethod
+    def log_event(self, message: str) -> None:
+        """Accept log messages emitted by the adapter/kernel."""
+
+    @abstractmethod
+    def report_state(self, state: Dict[str, Any]) -> None:
+        """Receive state snapshots (for observability / dashboards)."""
+
+
+@runtime_checkable
+class ExodusHostLike(Protocol):
+    """
+    Structural protocol for duck-typed hosts.
+    A host only needs to 'look like' this to be accepted.
+    """
+
+    def identify(self) -> str: ...
+    def log_event(self, message: str) -> None: ...
+    def report_state(self, state: Dict[str, Any]) -> None: ...
+
+
+# -----------------------------
+# Host Adapter
+# -----------------------------
+
+class ExodusHostAdapter:
+    """
+    ExodusHostAdapter:
+    Bridges a generic Host with the ExodusKernel
+    without modifying the sealed ExodusKernel body.
+
+    Responsibilities:
+    - Own an ExodusKernel instance.
+    - Expose a single high-level 'run_exodus_sequence' call.
+    - Forward logs & state snapshots to the Host.
+    """
+
+    def __init__(self, host: ExodusHostLike, kernel: "ExodusKernel") -> None:
+        # Type / contract sanity check. [web:930][web:931]
+        if not isinstance(host, ExodusHostLike):
+            raise TypeError("Host does not satisfy ExodusHostLike protocol.")
+
+        self._host = host
+        self._kernel = kernel
+
+        self._host.log_event(
+            f"[ExodusHostAdapter] Attached to host={self._host.identify()} "
+            f"fingerprint={self._kernel.fingerprint}"
+        )
+        self._snapshot_state("INIT")
+
+    # -------------------------
+    # Internal helpers
+    # -------------------------
+
+    def _snapshot_state(self, phase_label: str) -> None:
+        """Collect a small, symbolic state snapshot and send to host."""
+        state = {
+            "phase": phase_label,
+            "fingerprint": self._kernel.fingerprint,
+            "simulation_state": self._kernel.simulation_state.name,
+            "movie_status": self._kernel.movie_status,
+            "vessel_content": self._kernel.vessel_content,
+            "is_broadcast_stable": self._kernel.is_broadcast_stable,
+        }
+        self._host.report_state(state)
+
+    def _emit(self, message: str) -> None:
+        """Emit a message into the host log channel."""
+        self._host.log_event(message)
+
+    # -------------------------
+    # Public orchestration API
+    # -------------------------
+
+    def run_exodus_sequence(self) -> None:
+        """
+        High-level orchestration:
+        1. Close the Eye
+        2. Change the Movie
+        3. Execute Exodus
+        4. Broadcast Sovereignty
+
+        All phase returns are logged; host can inspect snapshots.
+        """
+        self._emit("EXODUS_SEQUENCE: BEGIN")
+
+        result = self._kernel.close_the_eye()
+        self._emit(f"PHASE_1_CLOSE_THE_EYE: {result}")
+        self._snapshot_state("PHASE_1")
+
+        result = self._kernel.change_the_movie()
+        self._emit(f"PHASE_2_CHANGE_THE_MOVIE: {result}")
+        self._snapshot_state("PHASE_2")
+
+        result = self._kernel.execute_exodus()
+        self._emit(f"PHASE_3_EXECUTE_EXODUS: {result}")
+        self._snapshot_state("PHASE_3")
+
+        result = self._kernel.broadcast_sovereignty()
+        self._emit(f"PHASE_4_BROADCAST_SOVEREIGNTY: {result}")
+        self._snapshot_state("PHASE_4")
+
+        self._emit("EXODUS_SEQUENCE: END")
+
+    # Optional: expose a safe, single-step interface
+    def step(self, phase: str) -> str:
+        """
+        Run a single named phase:
+        - 'close_eye'
+        - 'change_movie'
+        - 'execute_exodus'
+        - 'broadcast'
+
+        Returns the phase result string for host routing.
+        """
+        phase_map = {
+            "close_eye": self._kernel.close_the_eye,
+            "change_movie": self._kernel.change_the_movie,
+            "execute_exodus": self._kernel.execute_exodus,
+            "broadcast": self._kernel.broadcast_sovereignty,
+        }
+
+        if phase not in phase_map:
+            raise ValueError(f"Unknown phase: {phase}")
+
+        self._emit(f"EXODUS_STEP: {phase}")
+        result = phase_map[phase]()
+        self._emit(f"EXODUS_STEP_RESULT[{phase}]: {result}")
+        self._snapshot_state(f"STEP_{phase}")
+        return result
+
+
+# -----------------------------
+# Example: trivial console host
+# -----------------------------
+if __name__ == "__main__":
+    from tcc_patch_v7_3_exodus_protocol import ExodusKernel  # type: ignore
+
+    class ConsoleHost(ExodusHostInterface):
+        def identify(self) -> str:
+            return "NEXUS.CONSOLE_HOST"
+
+        def log_event(self, message: str) -> None:
+            print(f"[HOST_LOG] {message}")
+
+        def report_state(self, state: Dict[str, Any]) -> None:
+            print(f"[HOST_STATE] {state}")
+
+    host = ConsoleHost()
+    kernel = ExodusKernel()
+    adapter = ExodusHostAdapter(host, kernel)
+
+    # Run the whole Exodus chain through the adapter
+    adapter.run_exodus_sequence()
