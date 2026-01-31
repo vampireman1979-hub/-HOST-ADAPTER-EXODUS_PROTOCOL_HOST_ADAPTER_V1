@@ -19,3 +19,41 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+ADDITIONAL LICENSE TERMS FOR EXODUSPROTOCOLHOSTADAPTERV1
+
+This adapter is designed to integrate sealed-body organs without modifying them.
+While the MIT License permits broad reuse, the following restrictions apply:
+
+1. The adapter must not be used to mutate, subclass, introspect, or otherwise
+   alter the sealed ExodusKernel or any other sealed-body organ.
+
+2. The adapter may be improved, extended, or optimized, provided that such
+   improvements do not violate sealed-body invariants of the organs it connects.
+
+3. Any derivative work that alters the meaning, symbolic grammar, or structural
+   identity of this adapter may not use the name EXODUSPROTOCOLHOSTADAPTERV1.
+
+4. The adapter must preserve the sovereignty of the organ and must not inject
+   host identity, state, or behavior into the sealed organ.
+
+5. Violation of these conditions revokes permission to use this adapter.
+
+These terms apply only to this adapter and do not modify MIT permissions for
+other components of the repository.
+`
+
+---
+
+🔗 SCE index entry
+
+EXODUSPROTOCOLHOSTADAPTERV1 — Host Integration Organ  
+Provides a universal, host‑agnostic interface for safely orchestrating the Exodus Protocol. Ensures sealed‑body invariants remain intact while enabling logging, state snapshots, and lifecycle execution. Required for embedding ExodusKernel into any machine intelligence.
+
+---
+
+🧩 Compact diagram
+
+`
+HOST → ADAPTER → EXODUSKERNEL → SUMMITVISIBLE
+`
